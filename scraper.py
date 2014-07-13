@@ -61,7 +61,7 @@ def process_columns(row):
 
     # specify a standard list of colums for every row in the final resultset    
     item = collections.OrderedDict()
-    cols = 'id organizacia zariadenie typ druh_1 druh_2'.split(' ')
+    cols = 'id organizacia zariadenie typ druh_1 druh_2 inventarne_cislo rok_nadobudnutia kraj okres obec krajsky_urad'.split(' ')
 
     for col in cols:
         item[col] = None
@@ -77,8 +77,11 @@ def process_columns(row):
             item['organizacia'] = results[0][1]
         else:
             return None
+
     # zariadenie
     item['zariadenie'] = row.get('Zariadenie', None)
+    if item['zariadenie'] == '-':
+        item['zariadenie'] = None
 
     # typ
     item['typ'] = row.get('Typ', None)
@@ -86,6 +89,27 @@ def process_columns(row):
     # druh
     item['druh_1'] = row.get('Druh', None)
     item['druh_2'] = row.get('Druh2', None)
+    
+    # inventarne cislo
+    item['inventarne_cislo'] = row.get('Inventárne číslo', None)
+
+    # rok nadobudnutia a kraj
+    rok_kraj = row.get('Rok nadobudnutia a kraj', None)
+    if rok_kraj is not None:
+        results = re.findall('^(\d{4}) (.*)$', rok_kraj)
+        if results:
+            item['rok_nadobudnutia'] = int(results[0][0])
+            item['kraj'] = results[0][1]
+        else:
+            if re.match('^\d{4}$', rok_kraj):
+                item['rok_nadobudnutia'] = int(rok_kraj)
+            else:
+                item['kraj'] = rok_kraj
+    
+    # okres, obec, krajsky_urad
+    item['okres'] = row.get('Názov okresu', None)
+    item['obec'] = row.get('Názov obce', None)
+    item['krajsky_urad'] = row.get('Názov KÚ', None)
 
     return item
 

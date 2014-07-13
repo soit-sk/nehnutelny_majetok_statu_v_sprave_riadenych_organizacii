@@ -1,6 +1,4 @@
-Evidencia nehnuteľného majetku štátu v správe riadených organizácií
-kapitoly MF SR.
-========================================================================
+Evidencia nehnuteľného majetku štátu v správe riadených organizácií kapitoly MF SR.
 
 This scraper scrapes the data from the Ministry of Finance of The 
 Slovak Republic. It processes the PDF list of the real-estate
