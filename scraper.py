@@ -16,7 +16,7 @@ header_row = 0                              # use row number N as headers
 column_count_row = 1                        # use row number N as column indexes (optional)
 ignore_rows = 2                             # ignore first N rows per page (must set explicitly, even if header is set, eg. N = 1 with headers)
 column_count = 38
-diff_vert = 3
+diff_vert = 4
 diff_horiz = 6
 
 
@@ -38,6 +38,7 @@ cellmap = {
     1069: 'Výmera v m^2',
     1179: 'Parcelné číslo',
     1209: 'Kolaudácia a správca objektu',
+    1222: 'Správca objektu',
     1323: 'Užívateľ objektu',
     1423: 'Obstarávacia cena v EUR',
     1459: 'Zostatková cena v EUR',
@@ -61,8 +62,10 @@ def process_columns(row):
 
     # specify a standard list of colums for every row in the final resultset    
     item = collections.OrderedDict()
-    cols = 'id organizacia zariadenie typ druh_1 druh_2 inventarne_cislo rok_nadobudnutia kraj okres obec krajsky_urad'.split(' ')
-
+    cols = 'id organizacia zariadenie typ druh_1 druh_2 inventarne_cislo rok_nadobudnutia kraj okres obec'.split(' ')
+    cols.extend('krajsky_urad ulica c_listu_vlastnictva spoluvlastnicky_podiel vymera parcelne_cislo kolaudacia'.split(' '))
+    cols.extend('spravca_objektu uzivatel_objektu obstaravacia_cena_v_EUR zostatkova_cena_v_EUR poznamka'.split(' '))
+    
     for col in cols:
         item[col] = None
     
@@ -110,6 +113,59 @@ def process_columns(row):
     item['okres'] = row.get('Názov okresu', None)
     item['obec'] = row.get('Názov obce', None)
     item['krajsky_urad'] = row.get('Názov KÚ', None)
+
+    # ulica
+    item['ulica'] = row.get('Ulica', None)
+    
+    # cisla a podiely
+    item['c_listu_vlastnictva'] = row.get('Číslo VL', None)
+    item['spoluvlastnicky_podiel'] = row.get('Spoluvl. podiel', None)
+
+    # vymera a parcelne cislo
+    vymera = row.get('Výmera v m^2', None)
+    if vymera is not None:
+        results = re.findall('^([\d ]+,\d+) (.*)$', vymera)
+        if results:
+            item['vymera'] = results[0][0]
+            item['parcelne_cislo'] = results[0][1]
+        else:
+            if re.match('^[\d ]+,\d+$', vymera):
+                item['vymera'] = vymera
+        
+    pc = row.get('Parcelné číslo', None)
+    if pc is not None:
+        item['parcelne_cislo'] = row.get('Parcelné číslo', None)
+
+    # datum kolaudacie a spravca objektu
+    kol_spr = row.get('Kolaudácia a správca objektu', None)
+    spr = row.get('Správca objektu', None)
+
+    if kol_spr is not None:
+        results = re.findall('^(\d{4}) (.*)$', kol_spr)
+        if results:
+            item['kolaudacia'] = int(results[0][0])
+            item['spravca_objektu'] = results[0][1]
+        else:
+            if re.match('^\d{4}$', kol_spr):
+                item['kolaudacia'] = int(kol_spr)
+            else:
+                item['spravca_objektu'] = kol_spr
+    if spr is not None:
+        item['spravca_objektu'] = spr.strip()
+
+    # uzivatel, obstaravacia a zostatkova cena
+    item['uzivatel_objektu'] = row.get('Užívateľ objektu', None)
+    item['obstaravacia_cena_v_EUR'] = row.get('Obstarávacia cena v EUR', None)
+
+    # poznamka
+    zc = row.get('Zostatková cena v EUR', None)
+    if zc is not None:
+        results = re.findall('^([\d ]+,\d+) (.*)$', zc)
+        if results:
+            item['zostatkova_cena_v_EUR'] = results[0][0]
+            item['poznamka'] = results[0][1]
+        else:
+            item['zostatkova_cena_v_EUR'] = zc
 
     return item
 
