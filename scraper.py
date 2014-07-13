@@ -16,9 +16,14 @@ header_row = 0                              # use row number N as headers
 column_count_row = 1                        # use row number N as column indexes (optional)
 ignore_rows = 2                             # ignore first N rows per page (must set explicitly, even if header is set, eg. N = 1 with headers)
 column_count = 38
+
+# fine tuning - the positions will not be exact, look vert/horiz pixels around to the 
+# boundary of nearest row/column
+
 diff_vert = 4
 diff_horiz = 6
 
+# static column definitions
 
 cellmap = {
     66: 'ID',
@@ -170,15 +175,23 @@ def process_columns(row):
     return item
 
 
+"""
+main loop
+"""
+
+
 html = scraperwiki.scrape(site_url + start_page)
 
 # get all pdf links
 root = lxml.html.fromstring(html)
 pdf_urls = root.cssselect("li.pdf > a")
+total_invalid_rows = 0
+total_processed_rows = 0
+total_pages = 0
 
-for pdf_url in pdf_urls:
+for filenum, pdf_url in enumerate(pdf_urls):
     pdf_url_text = site_url + pdf_url.get('href')
-    print pdf_url_text
+    #print pdf_url_text
 
     pdf_text = scraperwiki.scrape(pdf_url_text)
     data = scraperwiki.pdftoxml(pdf_text)
@@ -186,9 +199,11 @@ for pdf_url in pdf_urls:
     tree = lxml.etree.fromstring(data)
     #tree = lxml.etree.parse('data.xml')
 
-    missed_rows_global = 0
+    missed_rows_page = 0
+    processed_rows_page = 0
+
     for p, page in enumerate(tree.xpath('page')):
-        print "processing page" + page.get('number')
+        #print "processing page" + page.get('number')
 
         rows = {}
         xmlcells = page.xpath('text')
@@ -238,7 +253,16 @@ for pdf_url in pdf_urls:
                 missed_rows += 1
 
         scraperwiki.sqlite.save(unique_keys=['id'],data=pagedata)
-        print "Missed rows: %s" % missed_rows
-        missed_rows_global += missed_rows
+        #print "Missed rows: %s" % missed_rows
+        missed_rows_page += missed_rows
+        processed_rows_page += len(rows.keys())
 
-    print "Processed %s pages. Missed %s rows." % (p+1, missed_rows_global) 
+    print "File: %s Processed %s pages and %s rows. Skipped %s invalid rows." % (
+        filenum+1, p+1, processed_rows_page, missed_rows_page) 
+    
+    total_invalid_rows += missed_rows_page
+    total_processed_rows += processed_rows_page
+    total_pages += p + 1
+
+print "\nTOTAL: Files: %s Pages: %s Rows: %s Skipped rows: %s" % (
+    filenum+1, total_pages, total_processed_rows, total_invalid_rows) 
