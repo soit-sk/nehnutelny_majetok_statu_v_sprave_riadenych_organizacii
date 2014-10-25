@@ -21,12 +21,45 @@ column_count = 38
 # boundary of nearest row/column
 
 diff_vert = 4
-diff_horiz = 6
+diff_horiz = 7
 
 # static column definitions
-
+# NEW VALUES VALID FROM 2014-10-25
 cellmap = {
-    66: 'ID',
+    116: 'ID',
+    148: 'ID2',
+    543: 'Zariadenie',
+    951: 'Typ',
+    1024: 'Druh',
+    1210: 'Druh2',
+    1652: 'Inventárne číslo',
+    1797: 'Rok nadobudnutia a kraj',
+    1943: 'Názov okresu',
+    2089: 'Názov obce',
+    2285: 'Názov KÚ',
+    2442: 'Ulica',
+    2626: 'Číslo VL',
+    2698: 'Spoluvl. podiel',
+    2831: 'Výmera v m^2',
+    2847: 'Výmera v m^2',
+    3126: 'Parcelné číslo',
+    3207: 'Kolaudácia a správca objektu',
+    3337: 'Správca objektu',
+    3239: 'Správca objektu',
+    3510: 'Užívateľ objektu',
+    3788: 'Obstarávacia cena v EUR',
+    3800: 'Obstarávacia cena v EUR',
+    3807: 'Obstarávacia cena v EUR',
+    3884: 'Zostatková cena v EUR',
+    3896: 'Zostatková cena v EUR',
+    3913: 'Zostatková cena v EUR',
+
+}
+
+# THESE VALUES USED TO BE VALID
+"""
+cellmap = {
+    116: 'ID',
     79: 'ID2',
     226: 'Zariadenie',
     378: 'Typ',
@@ -49,6 +82,7 @@ cellmap = {
     1459: 'Zostatková cena v EUR',
 
 }
+"""
 
 import scraperwiki
 import urllib2
@@ -59,7 +93,7 @@ import re
 import collections
 
 import mydebug as d
-d.DEBUG = True
+d.DEBUG = False # enable for debug output
 from mydebug import prt
 
 def process_columns(row):
@@ -68,8 +102,6 @@ def process_columns(row):
     The values are inconsistent across columns - values bleed to previous/next cells, this function
     attemps to create a list of consistent and usable values.
     """
-    
-    prt('-> process columns for row')
     # specify a standard list of colums for every row in the final resultset    
     item = collections.OrderedDict()
     cols = 'id organizacia zariadenie typ druh_1 druh_2 inventarne_cislo rok_nadobudnutia kraj okres obec'.split(' ')
@@ -249,17 +281,18 @@ for filenum, pdf_url in enumerate(pdf_urls):
 
             # we only want records with an ID
             id = itemvalues.get('ID', '')
-            prt('parsed id: ' + id)
-            prt('itemvalues:')
-            prt(itemvalues)
 
             if re.match('^\d+ \D.*', id) or (re.match('^\d+$', id) and 'ID2' in itemvalues):
                 itemvalues_processed = process_columns(itemvalues)
                 if itemvalues_processed is not None:
                     pagedata.append(itemvalues_processed)
                 else:
+                    prt('Could not match ID:')
+                    prt(itemvalues)
                     missed_rows += 1
             else:
+                prt('Could not match ID:')
+                prt(itemvalues)
                 missed_rows += 1
         
         scraperwiki.sqlite.save(unique_keys=['id'],data=pagedata)
