@@ -58,13 +58,18 @@ import sys
 import re
 import collections
 
+import mydebug as d
+d.DEBUG = True
+from mydebug import prt
+
 def process_columns(row):
     """
     Column post-processing (accepts a row of results)
     The values are inconsistent across columns - values bleed to previous/next cells, this function
     attemps to create a list of consistent and usable values.
     """
-
+    
+    prt('-> process columns for row')
     # specify a standard list of colums for every row in the final resultset    
     item = collections.OrderedDict()
     cols = 'id organizacia zariadenie typ druh_1 druh_2 inventarne_cislo rok_nadobudnutia kraj okres obec'.split(' ')
@@ -174,7 +179,6 @@ def process_columns(row):
 
     return item
 
-
 """
 main loop
 """
@@ -191,7 +195,7 @@ total_pages = 0
 
 for filenum, pdf_url in enumerate(pdf_urls):
     pdf_url_text = site_url + pdf_url.get('href')
-    #print pdf_url_text
+    prt(pdf_url_text)
 
     pdf_text = scraperwiki.scrape(pdf_url_text)
     data = scraperwiki.pdftoxml(pdf_text)
@@ -203,7 +207,7 @@ for filenum, pdf_url in enumerate(pdf_urls):
     processed_rows_page = 0
 
     for p, page in enumerate(tree.xpath('page')):
-        #print "processing page" + page.get('number')
+        prt("processing page" + page.get('number'))
 
         rows = {}
         xmlcells = page.xpath('text')
@@ -227,6 +231,8 @@ for filenum, pdf_url in enumerate(pdf_urls):
                 rows[top].append(xmlcell)
        
         pagedata = []
+
+        prt(sorted(rows.keys()))
         for key in sorted(rows.keys()):
             
             itemvalues = {}
@@ -243,6 +249,10 @@ for filenum, pdf_url in enumerate(pdf_urls):
 
             # we only want records with an ID
             id = itemvalues.get('ID', '')
+            prt('parsed id: ' + id)
+            prt('itemvalues:')
+            prt(itemvalues)
+
             if re.match('^\d+ \D.*', id) or (re.match('^\d+$', id) and 'ID2' in itemvalues):
                 itemvalues_processed = process_columns(itemvalues)
                 if itemvalues_processed is not None:
@@ -251,9 +261,10 @@ for filenum, pdf_url in enumerate(pdf_urls):
                     missed_rows += 1
             else:
                 missed_rows += 1
-
+        
         scraperwiki.sqlite.save(unique_keys=['id'],data=pagedata)
-        #print "Missed rows: %s" % missed_rows
+        prt("Missed rows: %s" % missed_rows)
+
         missed_rows_page += missed_rows
         processed_rows_page += len(rows.keys())
 
