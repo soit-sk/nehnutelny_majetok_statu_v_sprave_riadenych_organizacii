@@ -6,7 +6,11 @@ This scraper scrapes the data from the Ministry of Finance of The
 Slovak Republic. It processes the PDF list of the real-estate
 property of the state.
 
+it is out of date as of yet. please use the XML scraper.
+
 """
+
+exit()
 
 # INITIAL DATA
 
