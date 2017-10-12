@@ -12,7 +12,7 @@ the list in XML format.
 
 # INITIAL DATA
 
-site_url = 'https://www.finance.gov.sk/'    # main page
+site_url = 'http://www.finance.gov.sk/'    # main page
 start_page = 'Default.aspx?CatID=4733'      # subpage url
 DEBUG = False
 
